@@ -71,29 +71,35 @@ init(Options) ->
     #state{colored=proplists:get_bool(colored, Options),
            profile=proplists:get_bool(profile, Options)}.
 
-handle_begin(group, Data, St) ->
+handle_begin(group, Data, State=#state{status = Dict}) ->
+    io:format(">>> group ~p\n", [Data]),
     GID = proplists:get_value(id, Data),
-    Dict = St#state.status,
-    St#state{status=dict:store(GID, orddict:from_list([{type, group}|Data]), Dict)};
-handle_begin(test, Data, St) ->
+    NewDict = dict:store(GID, orddict:from_list([{type, group}|Data]), Dict),
+    State#state{status=NewDict};
+handle_begin(test, Data, State=#state{status = Dict}) ->
+    io:format(">>> test ~p\n", [Data]),
     TID = proplists:get_value(id, Data),
-    Dict = St#state.status,
-    St#state{status=dict:store(TID, orddict:from_list([{type, test}|Data]), Dict)}.
+    NewDict = dict:store(TID, orddict:from_list([{type, test}|Data]), Dict),
+    State#state{status=NewDict}.
 
-handle_end(group, Data, St) ->
-    St#state{status=merge_on_end(Data, St#state.status)};
-handle_end(test, Data, St) ->
-    NewStatus = merge_on_end(Data, St#state.status),
+handle_end(group, Data, St=#state{status=Status}) ->
+    io:format(">>> end group ~p\n", [Data]),
+    St#state{status=merge_on_end(Data, Status)};
+handle_end(test, Data, St=#state{status=Status}) ->
+    io:format(">>> end test ~p\n", [Data]),
+    NewStatus = merge_on_end(Data, Status),
     St1 = print_progress(Data, St),
     St2 = record_timing(Data, St1),
     St2#state{status=NewStatus}.
 
 handle_cancel(_, Data, #state{status=Status, skips=Skips}=St) ->
+    io:format(">>> cancel ~p\n", [Data]),
     Status1 = merge_on_end(Data, Status),
     ID = proplists:get_value(id, Data),
     St#state{status=Status1, skips=[ID|Skips]}.
 
 terminate({ok, Data}, St) ->
+    io:format(">>> terminate ~p\n", [Data]),
     print_failures(St),
     print_pending(St),
     print_profile(St),

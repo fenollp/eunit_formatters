@@ -15,9 +15,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 
-%%
-%%  Check if `.` and `F` are printed.
-%%
 basic_test() ->
     {ok, Output, error} = capture_io:capture(fun () ->
         Tests = [
@@ -25,9 +22,11 @@ basic_test() ->
             fun () -> ?assert(false) end,
             fun () -> error(some) end
         ],
-        eunit:test(Tests, [no_tty, {report, {eunit_progress, [colored, profile]}}])
+        eunit:test(Tests, [no_tty, {report, {eunit_progress, [colored, profile]}}, verbose])
     end),
-    ?assertMatch(match, re:run(Output, "^.*\\..*F.*F.*\nFailures.*", [{capture, none}])).
+    {"Check if `.` and `F` are printed."
+    ,?assertMatch(match, re:run(Output, "^.*\\..*F.*F.*\nFailures.*", [{capture, none}]))
+    }.
 
 
 %%
